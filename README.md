@@ -1,10 +1,13 @@
 # Java Coding Challenge - Task Management API Suite
 
+## Background
+I created this application as part of a job application for a position at an IT consultancy in Wellington. There was a small amount of out-dated code initially provided, with no API and a partial database implementation. There was also a request to keep to the same technologies and write the API to a 'production standard'. 
+
 ## Getting started
 
 ### Building the application
 
-From the project root foler: 
+From the project root folder: 
 
 `mvn clean install`
 
