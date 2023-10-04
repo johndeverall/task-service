@@ -1,7 +1,9 @@
 # Java Coding Challenge - Task Management API Suite
 
 ## Background
-I created this application as part of a job application for a position at an IT consultancy in Wellington. There was a small amount of out-dated code initially provided, with no API and a partial database implementation. There was also a request to keep to the same technologies and write the API to a 'production standard'. 
+I created this application as part of a job application for a position at an IT consultancy in Wellington. There was a small amount of out-dated code initially provided, with no API and a partial database implementation. There was also a request to keep to the same technologies and write the API to a 'production standard'.
+
+Based on my experience with the company, the interview pannel do not review this material. 
 
 ## Getting started
 
