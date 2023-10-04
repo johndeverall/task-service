@@ -1,0 +1,8 @@
+.classpath
+.project
+.settings
+derby.log
+/target
+/applicationdb
+*.snap
+*.snap.debug

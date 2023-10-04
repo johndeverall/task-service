@@ -1,0 +1,400 @@
+<html>
+
+<head>
+	<link rel="stylesheet" href="markdown.css">
+	<title>Java Coding Challenge</title>
+</head>
+
+<body>
+	<div id="contents" class="markdown-body">
+		<h1 data-line="0" class="code-line-0">Java Coding Challenge - Task Management API Suite</h1>
+
+		<h2 data-line="19" class="code-line-19">As built documentation</h2>
+
+		<h3 data-line="21" class="code-line-21">System requirements</h3>
+		<p>This application has been tested on Java 11 and Java 17.</p>
+
+		<h3 data-line="21" class="code-line-21">Building the application</h3>
+
+		<p></pr><code data-line="23" class="code-line-23">mvn clean install</code></p>
+		<p>Also: port 8080 (by default or alternatively another configured port) must be available to build the application. This is because the task server needs to be started so that the tests can run.</p>
+
+
+		<h3 data-line="25" class="code-line-25">Running the application</h3>
+		<p>From the maven target directory: </p>
+		<code data-line="27" class="code-line-27">java -jar task-api-jar-with-dependencies.jar</code>
+
+		<h3 data-line="29" class="code-line-29">RESTful API</h3>
+
+		<h4>Create a task</h4>
+		<code data-line="31" class="code-line-31">
+			curl --request POST \
+			--url http://localhost:8080/api/tasks \
+			--header 'Content-Type: application/json' \
+			--data '{
+			"title" : "Test name",
+			"description" : "Test description",
+			"status" : "PENDING",
+			"due_date" : "2023-04-04"
+			}'
+		</code>
+		<h4>Get a single task</h4>
+		<code>
+		curl --request GET \
+		--url http://localhost:8080/api/tasks/4
+		</code>
+		<h4>Get all tasks</h4>
+		<code>
+		curl --request GET \
+		--url http://localhost:8080/api/tasks
+		</code>
+		<h4>Get overdue tasks</h4>
+		<p>An overdue task is a task that has a due date in <i>the past</i> and is not <i>done</i>.</p>
+		<p><i>The past</i> is defined by the client in that tasks with a due date are selected by status within a date range (inclusive). This endpoint has been implemented in such a way to provide flexibility to the user as to what overdue means to them. In addition to providing overdue tasks, this implementation of the endpoint could be useful when creating calendar views on the client, querying <i>in progress</i> tasks, or tasks that are <i>done</i>.</p>
+		<h5>Examples:</h5>
+		<h6>Get tasks that are overdue as of 2023-05-28</h6>
+		<code>
+			curl --request GET \
+			--url 'http://localhost:8080/api/tasks?endDate=2023-05-28&status=IN_PROGRESS%2C%20TODO'
+		</code>
+		<h6>Get incomplete tasks that have a due date between 2023-01-01 and 2023-01-14 (about a typical sprint length). This can be used to exclude long overdue tasks from the result set.</h6>
+		<code>
+			curl --request GET \
+			--url 'http://localhost:8080/api/tasks?startDate=2023-01-01&endDate=2023-01-14&status=IN_PROGRESS%2C%20TODO'
+		</code>
+		<h6>Get all tasks within a date range</h6>
+		<code>
+			curl --request GET \
+			--url 'http://localhost:8080/api/tasks?startDate=2023-05-04&endDate=2023-05-14'
+		</code>
+		<h6>It is also possible to get tasks that are done</h6>
+		<code>
+			curl --request GET \
+			--url 'http://localhost:8080/api/tasks?status=DONE'
+		</code>
+		<h4>Delete a task</h4>
+		<code>
+		curl --request DELETE \
+		--url http://localhost:8080/api/tasks/3
+		</code>
+		<h4>Update a task</h4>
+		<code>
+		curl --request PUT \
+		--url 'http://localhost:8080/api/tasks/4?=' \
+		--header 'Content-Type: application/json' \
+		--data '{
+		"title": "First task",
+		"description": "This is the first task",
+		"status" : "DONE",
+		"due_date" : "2023-05-04"
+		}'
+		</code>
+		<h4>Graceful shutdown</h4>
+		<p>When the application is running, it can be shutdown gracefully by sending a POST request to the following endpoint:</p>
+		<code>curl --request POST \
+		--url 'http://localhost:8080/shutdown?token=secret'</code>
+
+		<h3>Summary of API requests and responses</h3>
+		<table>
+			<tr>
+				<th>HTTP Verb</th>
+				<th>URL</th>
+				<th>Expected Response(s)</th>
+				<th>Notes</th>
+				<th>Expected Error Response(s)</th>
+			</tr>
+			<tr>
+				<td>GET</td>
+				<td>/api/tasks/{task id}</td>
+				<td><ul>
+					<li>HTTP 200 - A single task object with the corresponding task id</li>
+					<li>HTTP 404 - Not found</li>
+				</ul>
+				</td>
+				<td><ul>
+					<li>A single task</li>
+					<li>Not found is returned when a task does not exist.</li>
+				</ul></td>
+				<td><p>
+					<b>Response status</b>: HTTP 400 - Bad request
+				</p>
+					<p>
+						<b>Response body</b>: Constraint violation, for example:</p>
+					<p><code><pre>
+[
+	{
+		"message": "Invalid task id",
+		"propertyPath": "",
+		"invalidValue": "ab"
+	}
+]</pre></code>
+					</p>
+				</td>
+			</tr>
+			<tr>
+			<tr>
+				<td>GET</td>
+				<td>/api/tasks</td>
+				<td><ul><li>HTTP 200 - Json array of task objects</li></ul></td>
+				<td><ul><li>A (possibly empty) json array of task objects.</li></ul></td>
+				<td><p>
+					<b>Response status</b>: HTTP 400 - Bad request
+				</p>
+					<p>
+						<b>Response body</b>:</p>
+					<p><code>{ "error": "An error occurred"}</code>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td>GET</td>
+				<td>/api/tasks?startDate=2023-01-01&endDate=2023-05-28&status=IN_PROGRESS,TODO,DONE</td>
+				<td><ul><li>HTTP 200 - Json array of filtered task objects</li></ul></td>
+				<td><ul>
+					<li><code>startDate</code> and <code>endDate</code> are inclusive and applied to the due_date</li>
+					<li>Returned json array can be empty.</li>
+					<li>All parameters are optional.</li>
+					<li>Ommitted <code>startDate</code> defaults to minimum date.</li>
+					<li>Ommitted <code>endDate</code> defaults to maximum date.</li>
+					<li>Omitted status defaults to returning all status types.</li>
+					<li>Non sensical requests give no results.</li>
+					<li>Supported statuses are <code>TODO</code>, <code>IN_PROGRESS</code> and <code>DONE</code>.</li>
+				</ul></td>
+				<td><p>
+					<b>Response status</b>: HTTP 400 - Bad request
+				</p>
+					<p>
+						<b>Response body</b>: Constraint violation, for example:</p>
+					<p><code>
+
+						<pre>
+[
+	{
+		"message": "Invalid status: TODOS. Status must be one of TODO, IN_PROGRESS or DONE",
+		"propertyPath": "",
+		"invalidValue": "TODOS"
+	}
+]
+					</pre></code>
+					</p></td>
+			</tr>
+			<tr>
+				<td>DELETE</td>
+				<td>/api/tasks/{task id}</td>
+				<td><ul>
+					<li>HTTP 204 - No content</li>
+					<li>HTTP 404 - Not found</li>
+				</ul></td>
+				<td>
+					<ul><li>An HTTP 204 is returned on a successful delete.</li></ul>
+					<ul><li>Not found is returned when a task does not exist to be deleted.</li></ul>
+				</td>
+				<td><p>
+					<b>Response status</b>: HTTP 400 - Bad request
+				</p>
+					<p>
+						<b>Response body</b>:</p>
+					<p><code><pre>[
+	{
+		"message": "Invalid task id",
+		"propertyPath": "",
+		"invalidValue": "ab"
+	}
+]</pre></code>
+					</p></td>
+			</tr>
+			<tr>
+				<td>PUT</td>
+				<td>/api/tasks/{task id}</td>
+				<td><ul>
+					<li>HTTP 200 - Returns updated task object with corresponding task id</li>
+					<li>HTTP 404 - Not found</li>
+				</ul></td>
+				<td>
+					<ul>
+						<li>An HTTP 200 is returned on a successful update.</li>
+						<li>Not found is returned when a task does not exist to be updated.</li>
+						<li>Invalid title and description will return constraint violations.</li>
+						<li>Malformatted date will return an error response.</li>
+						<li>Invalid status will be ignored.</li>
+						<li>Non-updateable properties (creation date and id) will be ignored.</li>
+					</ul>
+				</td>
+				<td>
+					<p>
+						<b>Response status</b>: HTTP 400 - Bad request
+					</p>
+					<p>
+						<b>Response body</b>:</p>
+					<p><code>{ "error": "An error occurred"}</code>
+					</p>
+					<p>OR</p>
+					<p>
+						<code><pre>
+[
+	{
+		"message": "Title is required",
+		"propertyPath": "title",
+		"invalidValue": ""
+	},
+	{
+		"message": "Description exceeds maximum length of 1024",
+		"propertyPath": "description",
+		"invalidValue": "sdfdsfsddfsfdsf...."
+	}
+]
+						</pre></code>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td>POST</td>
+				<td>/api/tasks</td>
+				<td><ul>
+					<li>HTTP 201 - Returns new task object with task id</li>
+				</ul></td>
+				<td>
+					<ul>
+						<li>An HTTP 201 CREATED is returned on a successful create.</li>
+						<li>Invalid title and description will return constraint violations.</li>
+						<li>Malformatted date will return an error response.</li>
+						<li>Invalid status will be ignored.</li>
+						<li>Non-updateable properties (creation date and id) will be ignored.</li>
+					</ul>
+				</td>
+				<td>
+					<p>
+						<b>Response status</b>: HTTP 400 - Bad request
+					</p>
+					<p>
+						<b>Response body</b>:</p>
+					<p><code>{ "error": "An error occurred"}</code>
+					</p>
+					<p>OR</p>
+					<p>
+						<code><pre>
+[
+	{
+		"message": "Title is required",
+		"propertyPath": "title",
+		"invalidValue": ""
+	},
+	{
+		"message": "Description exceeds maximum length of 1024",
+		"propertyPath": "description",
+		"invalidValue": "sdfdsfsddfsfdsf...."
+	}
+]
+						</pre></code>
+					</p>
+					</ul></td>
+			</tr>
+			<tr>
+				<td>POST</td>
+				<td>/shutdown?token=secret</td>
+				<td><ul>
+					<li>HTTP 200 - No body</li>
+					<li>Error: Couldn't connect to server</li>
+				</ul></td>
+				<td><ul>
+					<li>Graceful shutdown of the application.</li>
+					<li>Cannot connect to server if it has already been shut down.</li>
+				</ul></td>
+				<td><p>
+					<b>Response status</b>: HTTP 400 - Bad request
+				</p>
+					<p>
+						<b>Response body</b>:</p>
+					<p><code>{ "error": "An error occurred"}</code>
+					</p></td>
+			</tr>
+		</table>
+
+
+		<h3>Application configuration</h3>
+		<p>The application can be configured by using either environment variables or java system variables. This makes the application easy to containerise (i.e. using Docker). The following properties are available:</p>
+		<ul>
+			<li><strong>task.api.shutdown.secret</strong> - The token used to shutdown the application. Default is secret.</li>
+			<li><strong>task.api.port</strong> - The port the application will run on. Default is 8080.</li>
+			<li><strong>task.api.database.url</strong> - The JDBC URL for the database. Default is <code>jdbc:derby:applicationdb</code>.</li>
+			<li><strong>task.api.database.username</strong> - The username for the database.</li>
+			<li><strong>task.api.database.password</strong> - The password for the database.</li>
+		</ul>
+		<p>Java system variables take precedence over operating system environment variables. Java system variable format is like <code>task.api.port</code>. Operating system environment variable format is like <code>TASK_API_PORT</code>.</p>
+		<h3>Technology choices and recommendations</h3>
+		<h4>Technology choices</h4>
+		<p>An effort was made to use the technologies the original authors were already using without adding more. Embedded Jetty rather than the Jetty Maven Plugin has been used as the Jetty Maven Plugin is not suitable for production deployment.</p>
+		<p>Gson has been used for json serialisation and deserialisation.</p>
+		<p>All other existing libraries have been updated to their latest stable versions or have been removed if they were not in use.</p>
+		<h4>Recommendations</h4>
+		<h5>Adopt Spring-boot</h5>
+		<p>Adopting spring-boot or another java low code framework would greatly simplify the implementation of this service. In particular the following would be simplified:</p>
+		<ul>
+			<li>Request routing (using Spring MVC)</li>
+			<li>Database access (using Spring JPA)</li>
+			<li>Server configuration (using Spring boot)</li>
+			<li>Request validation (using JSR 380 bean validation)</li>
+			<li>API documentation using HATEOAS (Hypermedia as the engine of application state) approaches or Swagger should the service grow and this be necessary.</li>
+		</ul>
+		<p>In addition, significant 'out of the box' functionality could also be added more easily by using a framework such as spring-boot, for example a healthcheck and API discoverability / HATEOAS api design should the number of resources in the API grow.</p>
+		<p>Spring-Boot was also not used for this task because the title of the task is Java Coding <i>Challenge</i>. Not using a low code framework such as Spring Boot made the <i>challenge</i> part more fun.</p></p>
+		<h5>Support application generated resource IDs</h5>
+		<p>Currently the database schema does not support application generated resource IDs.</p>
+		<p>Application-generated resource IDs would provide independence from Apache Derby, ID consistency across services, enhanced security and privacy and control over ID generation. Application-generated resource IDs offer benefits such as decoupling, flexibility, and customization compared to Apache Derby generated resource IDs, which are predictable, tied to the database, and less flexible.</p>
+		<h3>Connection pooling</h3>
+		<p>Apache Derby's native database connection pooling has been used, however this could be upgraded if load is expected to be high.</p>
+		<h3>Database design</h3>
+		<p>The database design remains unchanged from the original application where the status length in the database is limited to 10 characters. IN_PROGRESS is 11 characters long. Well played.</p>
+		<p data-line="6" class="code-line-6"><strong>Table name</strong> - <em>tasks</em></p>
+		<p data-line="8" class="code-line-8"><strong>Table columns:</strong></p>
+		<ul>
+			<li data-line="9" class="code-line-9"><em>id</em> int not null generated always as identity,</li>
+			<li data-line="10" class="code-line-10"><em>title</em> varchar(256) not null,</li>
+			<li data-line="11" class="code-line-11"><em>description</em> varchar(1024),</li>
+			<li data-line="12" class="code-line-12"><em>due_date</em> date,</li>
+			<li data-line="13" class="code-line-13"><em>status</em> varchar(10),</li>
+			<li data-line="14" class="code-line-14"><em>creation_date</em> date not null,</li>
+			<li data-line="15" class="code-line-15"><em>primary key (id)</em></li>
+		</ul>
+		<h3>Logging</h3>
+		<p>Application logging is to standard out console and to a file named application.log in the logs folder. The logs folder will be automatically generated when the application starts.</p>
+		<p>No IO logging has been provided but could be in the future.</p>
+		<h3>Testing</h3>
+		<p>The automated test suite provided within the code base has a number of features (listed below):
+		<li>Before the tests run, the Task Server is automatically started on port 8080 by default (or another configured port).</li>
+		<li>A combination of snapshot testing (verifying results haven't changed from a previous snapshot) and response code testing has been used on http responses for verification of solution correctness.</li>
+		<li>Each test contains at least one, and possibly more than one HTTP request that is sent to the Task Server. </li>
+		<li>A custom comparator has been included to compare responses that change server side so that responses returned at different times under different conditions can still be compared for snapshot testing purposes.</li>
+		<li>Some light weight 'framework' code has been included to chain responses together in test cases. For example, {id} in the DELETE operation in the following code is taken from the previous POST operation in a request chain. This framework code therefore facilitates the rapid construction of API level test cases as test cases can be specified in json at the API level. </li>
+		<pre>
+		<code>
+@Test
+public void delete_204() throws IOException {
+	// Given
+	TestCase delete204 = new TestCase(BASE_URL);
+	String[] chainedParameters = new String[] {"id"};
+	delete200.addOperation(POST, "/api/tasks", "{ \"title\" : \"Test name\", \"description\" : \"Test description\", \"status\" : \"TODO\", \"due_date\" : \"2023-04-04\" }", chainedParameters);
+	delete200.addOperation(DELETE, "/api/tasks/{id}");
+
+	// When
+	TestCase.Results results = delete204.execute();
+
+	// Then
+	assertEquals(204, results.getLast().getStatusCode());
+	expect.toMatchSnapshot(results.getLast().getJson());
+}
+</code>
+	</pre></li>
+		<h3>Troubleshooting</h3>
+		<p>The application will not build if the tests fail. There are two likely reasons why the tests might fail.</p>
+		<ol>
+			<li>Port 8080 is already in use. If this is the case then it should be fairly clear from the log. The solution to this is to free up port 8080 so the application will build or configure the application to build on a different port.</li>
+			<li>The test cases do not match the previous snapshots. If this is the case then this should also be visible in the log output. The solution to this issue is to delete the previous test snapshots (or in the case of development fix whatever is causing the tests to fail). The snapshots are stored in the __snapshots__ folder.</li>
+		</ol>
+		<br>
+		<br>
+		<br>
+	</div>
+</body>
+
+</html>
